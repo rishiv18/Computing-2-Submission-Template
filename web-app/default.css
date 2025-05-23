@@ -30,6 +30,7 @@
 @font-face {
     font-family: 'GameFont';
     src: url('./assets/fonts/your-font.ttf'); /* Replace with your actual font */
+    src: url('./assets/kantumruy-pro-khmer-500-normal.ttf'); /* Replace with your actual font */
     font-weight: normal;
     font-style: normal;
 }
