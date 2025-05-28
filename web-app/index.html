@@ -7,3 +7,90 @@
 <link rel="stylesheet" href="default.css"> <!-- Import style sheet – default.css -->
 <link rel="icon" href="./assets/favicon.png"> <!-- Import 'Favorites Icon' – favicon.png -->
 <script type="module" src="main.js"></script> <!-- Load the main script. Must be type="module". Have only one of these -->
+
+
+<body>
+    <div class='logo-container'>
+        <logo-h1> Bento Blocks </logo-h1>
+    </div>
+</body>
+<body>
+    <!-- PLAYER SELECTION SCREEN -->
+    <div id="player-selection-screen" class="screen active">
+        <!-- Logo Container -->
+        <div class="logo-container">
+            <div class="logo">
+                <h1>Bento<br>Blocks</h1>
+                <div class="logo-accent"></div>
+            </div>
+        </div>
+
+        <!-- Help Button -->
+        <div class="help-button">
+            <img src="./assets/question-mark.svg" alt="Help" width="40" height="40">
+        </div>
+
+        <!-- Player Selection -->
+        <div class="player-selection">
+            <!-- Player 1 -->
+            <div class="player-card player1">
+                <div class="player-switch">
+                    <span>switch auto-play</span>
+                </div>
+                <div class="player-info">
+                    <div class="player-label">Player 1</div>
+                    <div class="player-icon">
+                        <img src="./assets/lime.svg" alt="Lime" width="60" height="60">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Player 2 -->
+            <div class="player-card player2">
+                <div class="player-switch">
+                    <span>switch auto-play</span>
+                </div>
+                <div class="player-info">
+                    <div class="player-label">Player 2</div>
+                    <div class="player-icon">
+                        <img src="./assets/strawberry.svg" alt="Strawberry" width="60" height="60">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Player 3 -->
+            <div class="player-card player3">
+                <div class="player-switch">
+                    <span>switch auto-play</span>
+                </div>
+                <div class="player-info">
+                    <div class="player-label">Player 3</div>
+                    <div class="player-icon">
+                        <img src="./assets/mango.svg" alt="Mango" width="60" height="60">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Player 4 -->
+            <div class="player-card player4">
+                <div class="player-switch">
+                    <span>switch auto-play</span>
+                </div>
+                <div class="player-info">
+                    <div class="player-label">Player 4</div>
+                    <div class="player-icon">
+                        <img src="./assets/blueberry.svg" alt="Blueberry" width="60" height="60">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Start Button -->
+        <div class="game-start" onclick="startGame()">
+            <img src="./assets/blocks-icon.svg" alt="Start Game" width="50" height="50">
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
