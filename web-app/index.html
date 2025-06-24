@@ -1,96 +1,187 @@
-<!-- In HTML Comments are written like this -->
-<!-- They can all be removed for your apps -->
-<!doctype html> <!-- This first line tells browsers to expect modern standard html 5 -->
-<html lang="en-gb"> <!-- This is indicates the page is written in British English, useful for accessibility -->
-<meta charset="utf-8"> <!-- This indicates how the file is encoded. utf-8 is standard -->
-<title>Your Web-app Title</title> <!-- All pages need a title, this will be displayed in the browser's title bar -->
-<link rel="stylesheet" href="default.css"> <!-- Import style sheet – default.css -->
-<link rel="icon" href="./assets/favicon.png"> <!-- Import 'Favorites Icon' – favicon.png -->
-<script type="module" src="main.js"></script> <!-- Load the main script. Must be type="module". Have only one of these -->
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Bento Blocks - A strategic Blockus-style puzzle game">
+    <meta name="keywords" content="blockus, puzzle, strategy, board game, bento blocks">
+    <meta name="author" content="Bento Blocks Game">
+    
+    <title>Bento Blocks - Strategic Block Placement Game</title>
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="default.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="main.js" as="script">
+    
+    <!-- Meta tags for social sharing -->
+    <meta property="og:title" content="Bento Blocks - Strategic Block Placement Game">
+    <meta property="og:description" content="Challenge your mind with this Blockus-style strategic puzzle game">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="">
+    <meta property="og:image" content="assets/game-preview.png">
+    
+    <!-- Twitter Card meta tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Bento Blocks">
+    <meta name="twitter:description" content="Strategic block placement puzzle game">
+    <meta name="twitter:image" content="assets/game-preview.png">
+</head>
 
 <body>
-    <div class='logo-container'>
-        <logo-h1> Bento Blocks </logo-h1>
-    </div>
-</body>
-<body>
-    <!-- PLAYER SELECTION SCREEN -->
-    <div id="player-selection-screen" class="screen active">
-        <!-- Logo Container -->
-        <div class="logo-container">
-            <div class="logo">
-                <h1>Bento<br>Blocks</h1>
-                <div class="logo-accent"></div>
-            </div>
+    <!-- Game Info Overlay -->
+    <div class="game-info" id="gameInfo">
+        <div class="current-player" id="currentPlayer">
+            Current Player: <span id="playerIndicator">Player 1</span>
         </div>
-
-        <!-- Help Button -->
-        <div class="help-button">
-            <img src="./assets/question-mark.svg" alt="Help" width="40" height="40">
-        </div>
-
-        <!-- Player Selection -->
-        <div class="player-selection">
-            <!-- Player 1 -->
-            <div class="player-card player1">
-                <div class="player-switch">
-                    <span>switch auto-play</span>
-                </div>
-                <div class="player-info">
-                    <div class="player-label">Player 1</div>
-                    <div class="player-icon">
-                        <img src="./assets/lime.svg" alt="Lime" width="60" height="60">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Player 2 -->
-            <div class="player-card player2">
-                <div class="player-switch">
-                    <span>switch auto-play</span>
-                </div>
-                <div class="player-info">
-                    <div class="player-label">Player 2</div>
-                    <div class="player-icon">
-                        <img src="./assets/strawberry.svg" alt="Strawberry" width="60" height="60">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Player 3 -->
-            <div class="player-card player3">
-                <div class="player-switch">
-                    <span>switch auto-play</span>
-                </div>
-                <div class="player-info">
-                    <div class="player-label">Player 3</div>
-                    <div class="player-icon">
-                        <img src="./assets/mango.svg" alt="Mango" width="60" height="60">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Player 4 -->
-            <div class="player-card player4">
-                <div class="player-switch">
-                    <span>switch auto-play</span>
-                </div>
-                <div class="player-info">
-                    <div class="player-label">Player 4</div>
-                    <div class="player-icon">
-                        <img src="./assets/blueberry.svg" alt="Blueberry" width="60" height="60">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Game Start Button -->
-        <div class="game-start" onclick="startGame()">
-            <img src="./assets/blocks-icon.svg" alt="Start Game" width="50" height="50">
+        <div class="score" id="scoreDisplay">
+            Score: <span id="playerScore">0</span>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Main Game Container -->
+    <main class="game-container" id="gameContainer">
+        <!-- Game Board Section -->
+        <section class="board-section" id="boardSection">
+            <div class="game-board" id="gameBoard">
+                <!-- Board cells will be dynamically generated by JavaScript -->
+            </div>
+        </section>
+
+        <!-- Game Pieces Section -->
+        <aside class="pieces-section" id="piecesSection">
+            <!-- Pieces Header -->
+            <header class="pieces-header">
+                <h2 class="sr-only">Game Pieces</h2>
+                <button class="help-button" id="helpButton" aria-label="Help and Instructions" title="View game instructions">
+                    ?
+                </button>
+            </header>
+
+            <!-- Pieces Container -->
+            <div class="pieces-container" id="piecesContainer">
+                <!-- Game pieces will be dynamically generated by JavaScript -->
+            </div>
+        </aside>
+    </main>
+
+    <!-- Modal for Help/Instructions -->
+    <dialog class="modal" id="helpModal" aria-labelledby="helpModalTitle" aria-describedby="helpModalDescription">
+        <div class="modal-content">
+            <header class="modal-header">
+                <h2 id="helpModalTitle">How to Play Bento Blocks</h2>
+                <button class="modal-close" id="closeHelpModal" aria-label="Close help modal">&times;</button>
+            </header>
+            
+            <div class="modal-body" id="helpModalDescription">
+                <div class="instructions">
+                    <h3>Objective</h3>
+                    <p>Place all your pieces on the board to score points. The player with the highest score wins!</p>
+                    
+                    <h3>Rules</h3>
+                    <ul>
+                        <li>Each player takes turns placing one piece at a time</li>
+                        <li>Pieces must connect corner-to-corner with your other pieces</li>
+                        <li>Pieces cannot overlap or touch edge-to-edge with your other pieces</li>
+                        <li>Your first piece must touch a corner of the board</li>
+                        <li>Score points equal to the number of squares in each piece you place</li>
+                    </ul>
+                    
+                    <h3>Controls</h3>
+                    <ul>
+                        <li>Click on a piece to select it</li>
+                        <li>Click on the board to place the selected piece</li>
+                        <li>Right-click a piece to rotate it</li>
+                        <li>Double-click a piece to flip it</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Game Status Messages -->
+    <div class="status-messages" id="statusMessages" aria-live="polite" aria-atomic="true">
+        <!-- Status messages will be dynamically inserted here -->
+    </div>
+
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Loading Bento Blocks...</p>
+        </div>
+    </div>
+
+    <!-- Error Dialog -->
+    <dialog class="error-dialog" id="errorDialog" aria-labelledby="errorTitle" aria-describedby="errorMessage">
+        <div class="error-content">
+            <h2 id="errorTitle">Game Error</h2>
+            <p id="errorMessage">An unexpected error occurred. Please refresh the page and try again.</p>
+            <button class="error-close" id="closeErrorDialog">Close</button>
+        </div>
+    </dialog>
+
+    <!-- Game Over Modal -->
+    <dialog class="game-over-modal" id="gameOverModal" aria-labelledby="gameOverTitle" aria-describedby="gameOverResults">
+        <div class="modal-content">
+            <header class="modal-header">
+                <h2 id="gameOverTitle">Game Over!</h2>
+            </header>
+            
+            <div class="modal-body" id="gameOverResults">
+                <div class="final-scores" id="finalScores">
+                    <!-- Final scores will be populated by JavaScript -->
+                </div>
+                
+                <div class="game-actions">
+                    <button class="btn btn-primary" id="newGameButton">New Game</button>
+                    <button class="btn btn-secondary" id="closeGameOverModal">Close</button>
+                </div>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Accessibility: Screen Reader Only Content -->
+    <div class="sr-only" aria-live="polite" id="gameAnnouncements">
+        <!-- Screen reader announcements for game state changes -->
+    </div>
+
+    <!-- Game Scripts -->
+    <script src="ramda.js"></script>
+    <script src="bento_blocks.js"></script>
+    <script src="main.js"></script>
+    <!-- Analytics (optional) -->
+    <script>
+        // Add your analytics code here if needed
+        // Example: Google Analytics, Plausible, etc.
+    </script>
+
+    <!-- Service Worker Registration (optional) -->
+    <script>
+        // Register service worker for offline functionality
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(function(err) {
+                        console.log('ServiceWorker registration failed');
+                    });
+            });
+        }
+    </script>
+
+    <!-- No JavaScript Fallback -->
+    <noscript>
+        <div class="noscript-message">
+            <h1>JavaScript Required</h1>
+            <p>Bento Blocks requires JavaScript to run. Please enable JavaScript in your browser settings and refresh the page.</p>
+        </div>
+    </noscript>
 </body>
 </html>
