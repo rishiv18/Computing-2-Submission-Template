@@ -1,699 +1,379 @@
-/**
- * game.js - Main game controller for Bento Blocks
- * 
- * This file wraps the BentoBlocks core module in a browser-based web app.
- * It handles all UI interactions, DOM manipulation, and user input,
- * following the same pattern as Zombie Siege's browser frontend.
- * 
- * @author Bento Blocks Game
- * @version 1.0.0
- */
 console.log("Loading main.js...");
 console.log("BentoBlocks available:", typeof BentoBlocks);
+
 (function() {
     'use strict';
 
     // Game state
     let gameBoard = null;
     let selectedPiece = null;
-    let draggedElement = null;
-    let gameSettings = {
-        playerCount: 4,
-        difficulty: 'normal'
-    };
+    let currentPlayer = 1;
 
     // DOM elements
-    const elements = {
-        gameContainer: null,
-        gameBoard: null,
-        piecesContainer: null,
-        gameInfo: null,
-        currentPlayer: null,
-        playerScore: null,
-        helpButton: null,
-        helpModal: null,
-        gameOverModal: null,
-        loadingScreen: null,
-        statusMessages: null,
-        errorDialog: null
-    };
+    let boardElement = null;
+    let piecesContainer = null;
+    let currentPlayerDisplay = null;
+    let statusMessage = null;
 
-    // Player colors for CSS classes
-    const PLAYER_COLORS = {
-        1: 'player-1',
-        2: 'player-2', 
-        3: 'player-3',
-        4: 'player-4'
-    };
+    // Initialize the game when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("DOM loaded, initializing game...");
+        initializeGame();
+    });
 
-    /**
-     * Initialize the game when DOM is ready
-     */
-    function init() {
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', setupGame);
-        } else {
-            setupGame();
-        }
-    }
-
-    /**
-     * Set up the game interface and event listeners
-     */
-    function setupGame() {
+    function initializeGame() {
         try {
-            // Cache DOM elements
-            cacheElements();
+            console.log("Starting game initialization...");
             
-            // Set up event listeners
-            setupEventListeners();
-            
-            // Initialize game board
-            startNewGame();
-            
-            // Hide loading screen
-            hideLoadingScreen();
-            
-            console.log('Bento Blocks initialized successfully');
-        } catch (error) {
-            console.error('Failed to initialize game:', error);
-            showError('Failed to initialize game. Please refresh the page.');
-        }
-    }
+            // Get DOM elements
+            boardElement = document.querySelector('.board');
+            piecesContainer = document.querySelector('.pieces-grid');
+            currentPlayerDisplay = document.getElementById('currentPlayerDisplay');
+            statusMessage = document.getElementById('statusMessage');
 
-    /**
-     * Cache frequently used DOM elements
-     */
-    function cacheElements() {
-        elements.gameContainer = document.getElementById('gameContainer');
-        elements.gameBoard = document.getElementById('gameBoard');
-        elements.piecesContainer = document.getElementById('piecesContainer');
-        elements.gameInfo = document.getElementById('gameInfo');
-        elements.currentPlayer = document.getElementById('playerIndicator');
-        elements.playerScore = document.getElementById('playerScore');
-        elements.helpButton = document.getElementById('helpButton');
-        elements.helpModal = document.getElementById('helpModal');
-        elements.gameOverModal = document.getElementById('gameOverModal');
-        elements.loadingScreen = document.getElementById('loadingScreen');
-        elements.statusMessages = document.getElementById('statusMessages');
-        elements.errorDialog = document.getElementById('errorDialog');
-
-        // Validate required elements
-        const requiredElements = ['gameBoard', 'piecesContainer', 'currentPlayer', 'playerScore'];
-        for (const elementName of requiredElements) {
-            if (!elements[elementName]) {
-                throw new Error(`Required element not found: ${elementName}`);
+            if (!boardElement || !piecesContainer) {
+                throw new Error("Required DOM elements not found");
             }
-        }
-    }
 
-    /**
-     * Set up event listeners for game interactions
-     */
-    function setupEventListeners() {
-        // Help button
-        if (elements.helpButton) {
-            elements.helpButton.addEventListener('click', showHelpModal);
-        }
-
-        // Modal close buttons
-        document.addEventListener('click', handleModalClose);
-
-        // Keyboard shortcuts
-        document.addEventListener('keydown', handleKeyboard);
-
-        // Prevent default drag behavior on images and other elements
-        document.addEventListener('dragstart', (e) => e.preventDefault());
-
-        // Game over modal buttons
-        const newGameButton = document.getElementById('newGameButton');
-        if (newGameButton) {
-            newGameButton.addEventListener('click', startNewGame);
-        }
-
-        // Window resize handler
-        window.addEventListener('resize', debounce(handleResize, 250));
-    }
-
-    /**
-     * Start a new game
-     */
-    function startNewGame() {
-        try {
-            // Create new board
+            // Create new game board
             gameBoard = BentoBlocks.createBoard();
-            gameBoard = BentoBlocks.startGame(gameBoard, gameSettings.playerCount);
-            
-            // Reset UI state
-            selectedPiece = null;
-            
-            // Render game board
-            renderBoard();
-            
-            // Render pieces for current player
-            renderPieces();
-            
-            // Update game info
-            updateGameInfo();
-            
-            // Hide game over modal if showing
-            hideGameOverModal();
-            
-            showStatusMessage('New game started! Player 1\'s turn.');
-            
+            gameBoard = BentoBlocks.startGame(gameBoard, 4);
+
+            console.log("Game board created:", gameBoard);
+
+            // Initialize UI
+            createBoardUI();
+            createPiecesUI();
+            updateDisplay();
+            hideLoadingScreen();
+
+            // Add event listeners
+            addEventListeners();
+
+            showStatusMessage("New game started! Player 1's turn.", 'success');
+            console.log("Game initialization complete");
+
         } catch (error) {
-            console.error('Failed to start new game:', error);
-            showError('Failed to start new game. Please try again.');
+            console.error("Failed to initialize game:", error);
+            showErrorDialog("Failed to start new game. Please try again.");
         }
     }
 
-    /**
-     * Render the game board grid
-     */
-    function renderBoard() {
-        if (!elements.gameBoard) return;
+    function createBoardUI() {
+        console.log("Creating board UI...");
+        boardElement.innerHTML = '';
 
-        // Clear existing board
-        elements.gameBoard.innerHTML = '';
-
-        // Create grid cells
-        for (let row = 0; row < gameBoard.size; row++) {
-            for (let col = 0; col < gameBoard.size; col++) {
+        // Create 20x20 grid of cells
+        for (let row = 0; row < 20; row++) {
+            for (let col = 0; col < 20; col++) {
                 const cell = document.createElement('div');
-                cell.className = 'cell';
+                cell.className = 'board-cell';
                 cell.dataset.row = row;
                 cell.dataset.col = col;
                 
-                // Add player class if cell is occupied
-                const cellValue = gameBoard.grid[row][col];
-                if (cellValue !== 0) {
-                    cell.classList.add('occupied', PLAYER_COLORS[cellValue]);
-                }
-                
                 // Add click handler
-                cell.addEventListener('click', () => handleCellClick(row, col));
-                cell.addEventListener('mouseenter', () => handleCellHover(row, col));
-                cell.addEventListener('mouseleave', () => clearPreview());
+                cell.addEventListener('click', () => handleBoardClick(row, col));
                 
-                elements.gameBoard.appendChild(cell);
+                boardElement.appendChild(cell);
             }
         }
+        console.log("Board UI created successfully");
     }
 
-    /**
-     * Render pieces for the current player
-     */
-    function renderPieces() {
-        if (!elements.piecesContainer) return;
+    function createPiecesUI() {
+        console.log("Creating pieces UI...");
+        piecesContainer.innerHTML = '';
 
-        // Clear existing pieces
-        elements.piecesContainer.innerHTML = '';
+        const currentPlayerObj = gameBoard.players.find(p => p.id === currentPlayer);
+        if (!currentPlayerObj) return;
 
-        const currentPlayerData = gameBoard.players.find(p => p.id === gameBoard.currentPlayer);
-        if (!currentPlayerData) return;
-
-        // Get available pieces
-        const availablePieces = currentPlayerData.pieces.filter(piece => !piece.used);
-
-        availablePieces.forEach(piece => {
+        currentPlayerObj.pieces.forEach(piece => {
             const pieceElement = createPieceElement(piece);
-            elements.piecesContainer.appendChild(pieceElement);
+            piecesContainer.appendChild(pieceElement);
         });
+
+        console.log("Pieces UI created successfully");
     }
 
-    /**
-     * Create a DOM element for a game piece
-     * @param {Object} piece - Piece object
-     * @returns {HTMLElement} Piece DOM element
-     */
     function createPieceElement(piece) {
-        const container = document.createElement('div');
-        container.className = 'piece';
-        container.dataset.pieceId = piece.id;
-        
-        if (piece.used) {
-            container.classList.add('used');
+        const pieceDiv = document.createElement('div');
+        pieceDiv.className = `game-piece ${piece.used ? 'used' : ''}`;
+        pieceDiv.dataset.pieceId = piece.id;
+
+        if (!piece.used) {
+            pieceDiv.addEventListener('click', () => selectPiece(piece));
+            pieceDiv.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                rotatePiece(piece);
+            });
+            pieceDiv.addEventListener('dblclick', () => flipPiece(piece));
         }
 
-        // Get transformed shape
+        // Create visual representation of the piece
         const shape = BentoBlocks.getTransformedShape(piece);
         
-        // Calculate grid dimensions
+        // Calculate grid dimensions for this piece
         const maxX = Math.max(...shape.map(([x, y]) => x)) + 1;
         const maxY = Math.max(...shape.map(([x, y]) => y)) + 1;
         
         // Set grid template
-        container.style.gridTemplateColumns = `repeat(${maxY}, 20px)`;
-        container.style.gridTemplateRows = `repeat(${maxX}, 20px)`;
+        pieceDiv.style.gridTemplateColumns = `repeat(${maxY}, 12px)`;
+        pieceDiv.style.gridTemplateRows = `repeat(${maxX}, 12px)`;
 
-        // Create piece cells
-        const grid = Array(maxX).fill(null).map(() => Array(maxY).fill(false));
+        // Create blocks for each part of the piece
         shape.forEach(([x, y]) => {
-            grid[x][y] = true;
+            const block = document.createElement('div');
+            block.className = 'piece-block';
+            block.style.gridColumn = y + 1;
+            block.style.gridRow = x + 1;
+            pieceDiv.appendChild(block);
         });
 
-        // Add cells to DOM
-        for (let x = 0; x < maxX; x++) {
-            for (let y = 0; y < maxY; y++) {
-                const cell = document.createElement('div');
-                if (grid[x][y]) {
-                    cell.className = 'piece-cell';
-                } else {
-                    cell.className = 'piece-cell-empty';
-                    cell.style.visibility = 'hidden';
-                }
-                container.appendChild(cell);
-            }
-        }
-
-        // Add event listeners
-        if (!piece.used) {
-            container.addEventListener('click', () => selectPiece(piece));
-            container.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                rotatePiece(piece);
-            });
-            container.addEventListener('dblclick', () => flipPiece(piece));
-        }
-
-        return container;
+        return pieceDiv;
     }
 
-    /**
-     * Handle cell click for piece placement
-     * @param {number} row - Row coordinate
-     * @param {number} col - Column coordinate
-     */
-    function handleCellClick(row, col) {
-        if (!selectedPiece || gameBoard.status !== 'in_progress') {
+    function selectPiece(piece) {
+        if (piece.used) return;
+
+        console.log("Selecting piece:", piece.id);
+        
+        // Remove previous selection
+        document.querySelectorAll('.game-piece.selected').forEach(el => {
+            el.classList.remove('selected');
+        });
+
+        // Select new piece
+        selectedPiece = piece;
+        const pieceElement = document.querySelector(`[data-piece-id="${piece.id}"]`);
+        if (pieceElement) {
+            pieceElement.classList.add('selected');
+        }
+
+        showStatusMessage(`Selected piece: ${piece.id}`, 'info');
+    }
+
+    function rotatePiece(piece) {
+        if (piece.used) return;
+        
+        piece.rotation = (piece.rotation + 1) % 4;
+        updatePiecesUI();
+        console.log(`Rotated piece ${piece.id} to rotation ${piece.rotation}`);
+    }
+
+    function flipPiece(piece) {
+        if (piece.used) return;
+        
+        piece.flipped = !piece.flipped;
+        updatePiecesUI();
+        console.log(`Flipped piece ${piece.id}, now flipped: ${piece.flipped}`);
+    }
+
+    function handleBoardClick(row, col) {
+        if (!selectedPiece) {
+            showStatusMessage("Please select a piece first", 'error');
             return;
         }
 
         try {
-            // Attempt to place piece
-            gameBoard = BentoBlocks.placePiece(gameBoard, selectedPiece, row, col, gameBoard.currentPlayer);
+            console.log(`Attempting to place piece ${selectedPiece.id} at (${row}, ${col})`);
             
-            // Update UI
-            renderBoard();
-            renderPieces();
-            updateGameInfo();
-            
-            // Clear selection
-            selectedPiece = null;
-            clearPieceSelection();
-            clearPreview();
-            
-            // Check for game end
-            if (BentoBlocks.isGameOver(gameBoard)) {
-                endGame();
+            if (BentoBlocks.canPlacePiece(gameBoard, selectedPiece, row, col, currentPlayer)) {
+                // Place the piece
+                gameBoard = BentoBlocks.placePiece(gameBoard, selectedPiece, row, col, currentPlayer);
+                
+                console.log("Piece placed successfully");
+                
+                // Update UI
+                updateBoardDisplay();
+                updatePiecesUI();
+                
+                // Clear selection
+                selectedPiece = null;
+                document.querySelectorAll('.game-piece.selected').forEach(el => {
+                    el.classList.remove('selected');
+                });
+                
+                // Switch to next player
+                currentPlayer = BentoBlocks.getNextPlayer(gameBoard, currentPlayer);
+                updateDisplay();
+                
+                // Check if game is over
+                if (BentoBlocks.isGameOver(gameBoard)) {
+                    showGameOverDialog();
+                } else {
+                    showStatusMessage(`Player ${currentPlayer}'s turn`, 'success');
+                }
+                
             } else {
-                const currentPlayerData = gameBoard.players.find(p => p.id === gameBoard.currentPlayer);
-                showStatusMessage(`Player ${gameBoard.currentPlayer}'s turn`);
+                showStatusMessage("Invalid placement. Try a different position.", 'error');
+                console.log("Invalid piece placement");
             }
             
         } catch (error) {
-            console.warn('Invalid piece placement:', error.message);
-            showStatusMessage('Invalid placement. Try a different position.', 'warning');
+            console.error("Error placing piece:", error);
+            showStatusMessage("Invalid piece placement", 'error');
         }
     }
 
-    /**
-     * Handle cell hover for piece preview
-     * @param {number} row - Row coordinate
-     * @param {number} col - Column coordinate
-     */
-    function handleCellHover(row, col) {
-        if (!selectedPiece || gameBoard.status !== 'in_progress') {
-            return;
-        }
-
-        clearPreview();
-
-        if (BentoBlocks.canPlacePiece(gameBoard, selectedPiece, row, col, gameBoard.currentPlayer)) {
-            showPreview(row, col, selectedPiece);
-        }
-    }
-
-    /**
-     * Show piece placement preview
-     * @param {number} row - Starting row
-     * @param {number} col - Starting column
-     * @param {Object} piece - Piece object
-     */
-    function showPreview(row, col, piece) {
-        const shape = BentoBlocks.getTransformedShape(piece);
+    function updateBoardDisplay() {
+        const cells = document.querySelectorAll('.board-cell');
         
-        shape.forEach(([dx, dy]) => {
-            const previewRow = row + dx;
-            const previewCol = col + dy;
+        cells.forEach((cell) => {
+            const row = parseInt(cell.dataset.row);
+            const col = parseInt(cell.dataset.col);
+            const cellValue = gameBoard.grid[row][col];
             
-            if (BentoBlocks.isValidPosition(previewRow, previewCol, gameBoard)) {
-                const cell = elements.gameBoard.children[previewRow * gameBoard.size + previewCol];
-                if (cell) {
-                    cell.classList.add('preview');
-                }
+            // Remove all player classes
+            cell.classList.remove('occupied', 'player-1', 'player-2', 'player-3', 'player-4');
+            
+            if (cellValue > 0) {
+                cell.classList.add('occupied', `player-${cellValue}`);
             }
         });
     }
 
-    /**
-     * Clear piece placement preview
-     */
-    function clearPreview() {
-        const previewCells = elements.gameBoard.querySelectorAll('.preview');
-        previewCells.forEach(cell => cell.classList.remove('preview'));
+    function updatePiecesUI() {
+        createPiecesUI();
     }
 
-    /**
-     * Select a piece for placement
-     * @param {Object} piece - Piece object
-     */
-    function selectPiece(piece) {
-        if (piece.used) return;
-
-        selectedPiece = piece;
-        
-        // Update UI
-        clearPieceSelection();
-        const pieceElement = elements.piecesContainer.querySelector(`[data-piece-id="${piece.id}"]`);
-        if (pieceElement) {
-            pieceElement.classList.add('selected');
+    function updateDisplay() {
+        // Update current player display
+        if (currentPlayerDisplay) {
+            currentPlayerDisplay.textContent = `Current Player: Player ${currentPlayer}`;
         }
-        
-        showStatusMessage(`Selected piece ${piece.id}. Click on the board to place it.`);
-    }
 
-    /**
-     * Clear piece selection
-     */
-    function clearPieceSelection() {
-        const selectedElements = elements.piecesContainer.querySelectorAll('.selected');
-        selectedElements.forEach(el => el.classList.remove('selected'));
-    }
-
-    /**
-     * Rotate the selected piece
-     * @param {Object} piece - Piece object
-     */
-    function rotatePiece(piece) {
-        if (piece.used) return;
-
-        // Update piece rotation
-        const playerData = gameBoard.players.find(p => p.id === gameBoard.currentPlayer);
-        const pieceIndex = playerData.pieces.findIndex(p => p.id === piece.id);
-        
-        if (pieceIndex !== -1) {
-            playerData.pieces[pieceIndex].rotation = (piece.rotation + 1) % 4;
-            
-            // Re-render pieces
-            renderPieces();
-            
-            // Re-select piece if it was selected
-            if (selectedPiece && selectedPiece.id === piece.id) {
-                selectedPiece = playerData.pieces[pieceIndex];
-                selectPiece(selectedPiece);
+        // Update scores
+        gameBoard.players.forEach((player, index) => {
+            const scoreElement = document.getElementById(`player${index + 1}Score`);
+            if (scoreElement) {
+                scoreElement.textContent = `Player ${player.id}: ${player.score}`;
             }
-        }
+        });
+
+        // Update pieces for current player
+        updatePiecesUI();
     }
 
-    /**
-     * Flip the selected piece
-     * @param {Object} piece - Piece object
-     */
-    function flipPiece(piece) {
-        if (piece.used) return;
-
-        // Update piece flip state
-        const playerData = gameBoard.players.find(p => p.id === gameBoard.currentPlayer);
-        const pieceIndex = playerData.pieces.findIndex(p => p.id === piece.id);
-        
-        if (pieceIndex !== -1) {
-            playerData.pieces[pieceIndex].flipped = !piece.flipped;
+    function showStatusMessage(message, type = 'info') {
+        if (statusMessage) {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message ${type} show`;
+            statusMessage.style.display = 'block';
             
-            // Re-render pieces
-            renderPieces();
-            
-            // Re-select piece if it was selected
-            if (selectedPiece && selectedPiece.id === piece.id) {
-                selectedPiece = playerData.pieces[pieceIndex];
-                selectPiece(selectedPiece);
-            }
+            // Hide after 3 seconds
+            setTimeout(() => {
+                statusMessage.style.display = 'none';
+                statusMessage.classList.remove('show');
+            }, 3000);
         }
     }
 
-    /**
-     * Update game information display
-     */
-    function updateGameInfo() {
-        if (!gameBoard) return;
-
-        const gameState = BentoBlocks.getGameState(gameBoard);
-        const currentPlayerData = gameState.players.find(p => p.id === gameBoard.currentPlayer);
-
-        if (elements.currentPlayer) {
-            elements.currentPlayer.textContent = `Player ${gameBoard.currentPlayer}`;
-            elements.currentPlayer.className = PLAYER_COLORS[gameBoard.currentPlayer];
-        }
-
-        if (elements.playerScore && currentPlayerData) {
-            elements.playerScore.textContent = currentPlayerData.score;
-        }
-    }
-
-    /**
-     * End the game and show results
-     */
-    function endGame() {
-        const gameState = BentoBlocks.getGameState(gameBoard);
-        const winners = BentoBlocks.getWinner(gameBoard);
+    function showErrorDialog(message) {
+        const errorDialog = document.getElementById('errorDialog');
+        const errorMessage = document.getElementById('errorMessage');
         
-        if (winners && winners.length > 0) {
-            if (winners.length === 1) {
-                showStatusMessage(`Game Over! Player ${winners[0].id} wins with ${winners[0].score} points!`);
-            } else {
-                const winnerIds = winners.map(w => w.id).join(', ');
-                showStatusMessage(`Game Over! Tie between players ${winnerIds}!`);
-            }
-        } else {
-            showStatusMessage('Game Over!');
+        if (errorDialog && errorMessage) {
+            errorMessage.textContent = message;
+            errorDialog.style.display = 'block';
         }
-
-        // Show game over modal
-        showGameOverModal(gameState);
     }
 
-    /**
-     * Show the game over modal
-     * @param {Object} gameState - Current game state
-     */
-    function showGameOverModal(gameState) {
-        if (!elements.gameOverModal) return;
-
-        // Update final scores
+    function showGameOverDialog() {
+        const gameOverModal = document.getElementById('gameOverModal');
         const finalScores = document.getElementById('finalScores');
-        if (finalScores) {
-            finalScores.innerHTML = '';
+        
+        if (gameOverModal && finalScores) {
+            const winners = BentoBlocks.getWinner(gameBoard);
             
-            // Sort players by score
-            const sortedPlayers = [...gameState.players].sort((a, b) => b.score - a.score);
+            let scoresHTML = '<h3>Final Scores:</h3>';
+            gameBoard.players.forEach(player => {
+                const isWinner = winners.some(w => w.id === player.id);
+                scoresHTML += `<div class="player-score player-${player.id} ${isWinner ? 'winner' : ''}">
+                    Player ${player.id}: ${player.score} ${isWinner ? '👑' : ''}
+                </div>`;
+            });
             
-            sortedPlayers.forEach((player, index) => {
-                const scoreElement = document.createElement('div');
-                scoreElement.className = `player-score ${PLAYER_COLORS[player.id]}`;
-                scoreElement.innerHTML = `
-                    <span class="rank">${index + 1}.</span>
-                    <span class="player">Player ${player.id}</span>
-                    <span class="score">${player.score} points</span>
-                `;
-                finalScores.appendChild(scoreElement);
+            finalScores.innerHTML = scoresHTML;
+            gameOverModal.style.display = 'block';
+        }
+    }
+
+    function hideLoadingScreen() {
+        const loadingScreen = document.getElementById('loadingScreen');
+        if (loadingScreen) {
+            loadingScreen.classList.add('hidden');
+        }
+    }
+
+    function addEventListeners() {
+        // New game button
+        const newGameBtn = document.getElementById('newGameBtn');
+        if (newGameBtn) {
+            newGameBtn.addEventListener('click', () => {
+                location.reload();
             });
         }
 
-        elements.gameOverModal.showModal();
-    }
-
-    /**
-     * Hide the game over modal
-     */
-    function hideGameOverModal() {
-        if (elements.gameOverModal) {
-            elements.gameOverModal.close();
+        // Reset button
+        const resetBtn = document.getElementById('resetBtn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                location.reload();
+            });
         }
-    }
 
-    /**
-     * Show the help modal
-     */
-    function showHelpModal() {
-        if (elements.helpModal) {
-            elements.helpModal.showModal();
-        }
-    }
-
-    /**
-     * Handle modal close events
-     * @param {Event} event - Click event
-     */
-    function handleModalClose(event) {
-        if (event.target.classList.contains('modal-close') || 
-            event.target.id === 'closeHelpModal' ||
-            event.target.id === 'closeGameOverModal' ||
-            event.target.id === 'closeErrorDialog') {
-            
-            const modal = event.target.closest('dialog');
-            if (modal) {
-                modal.close();
-            }
-        }
-    }
-
-    /**
-     * Handle keyboard shortcuts
-     * @param {KeyboardEvent} event - Keyboard event
-     */
-    function handleKeyboard(event) {
-        switch (event.key) {
-            case 'Escape':
-                // Close modals or clear selection
-                if (elements.helpModal && elements.helpModal.open) {
-                    elements.helpModal.close();
-                } else if (elements.gameOverModal && elements.gameOverModal.open) {
-                    elements.gameOverModal.close();
-                } else {
-                    selectedPiece = null;
-                    clearPieceSelection();
-                    clearPreview();
-                }
-                break;
-            
-            case 'r':
-            case 'R':
-                // Rotate selected piece
-                if (selectedPiece && !event.ctrlKey && !event.metaKey) {
-                    event.preventDefault();
-                    rotatePiece(selectedPiece);
-                }
-                break;
-            
-            case 'f':
-            case 'F':
-                // Flip selected piece
-                if (selectedPiece && !event.ctrlKey && !event.metaKey) {
-                    event.preventDefault();
-                    flipPiece(selectedPiece);
-                }
-                break;
-            
-            case 'n':
-            case 'N':
-                // New game
-                if (event.ctrlKey || event.metaKey) {
-                    event.preventDefault();
-                    startNewGame();
-                }
-                break;
-            
-            case '?':
-                // Show help
-                if (!event.ctrlKey && !event.metaKey) {
-                    event.preventDefault();
-                    showHelpModal();
-                }
-                break;
-        }
-    }
-
-    /**
-     * Handle window resize
-     */
-    function handleResize() {
-        // Recalculate board size if needed
-        // This is mainly for responsive design adjustments
-    }
-
-    /**
-     * Show a status message
-     * @param {string} message - Message to show
-     * @param {string} type - Message type ('info', 'warning', 'error')
-     */
-    function showStatusMessage(message, type = 'info') {
-        if (!elements.statusMessages) return;
-
-        const messageElement = document.createElement('div');
-        messageElement.className = `status-message ${type}`;
-        messageElement.textContent = message;
+        // Help button
+        const helpButton = document.getElementById('helpButton');
+        const helpModal = document.getElementById('helpModal');
+        const closeHelpModal = document.getElementById('closeHelpModal');
         
-        elements.statusMessages.appendChild(messageElement);
-        
-        // Auto-remove after 3 seconds
-        setTimeout(() => {
-            if (messageElement.parentNode) {
-                messageElement.parentNode.removeChild(messageElement);
-            }
-        }, 3000);
-
-        // Also announce to screen readers
-        const announcements = document.getElementById('gameAnnouncements');
-        if (announcements) {
-            announcements.textContent = message;
-        }
-    }
-
-    /**
-     * Show an error dialog
-     * @param {string} message - Error message
-     */
-    function showError(message) {
-        const errorMessage = document.getElementById('errorMessage');
-        if (errorMessage) {
-            errorMessage.textContent = message;
+        if (helpButton && helpModal) {
+            helpButton.addEventListener('click', () => {
+                helpModal.style.display = 'block';
+            });
         }
         
-        if (elements.errorDialog) {
-            elements.errorDialog.showModal();
+        if (closeHelpModal && helpModal) {
+            closeHelpModal.addEventListener('click', () => {
+                helpModal.style.display = 'none';
+            });
+        }
+
+        // Error dialog close
+        const closeErrorDialog = document.getElementById('closeErrorDialog');
+        const errorDialog = document.getElementById('errorDialog');
+        
+        if (closeErrorDialog && errorDialog) {
+            closeErrorDialog.addEventListener('click', () => {
+                errorDialog.style.display = 'none';
+            });
+        }
+
+        // Game over modal
+        const closeGameOverModal = document.getElementById('closeGameOverModal');
+        const newGameButton = document.getElementById('newGameButton');
+        const gameOverModal = document.getElementById('gameOverModal');
+        
+        if (closeGameOverModal && gameOverModal) {
+            closeGameOverModal.addEventListener('click', () => {
+                gameOverModal.style.display = 'none';
+            });
         }
         
-        console.error('Game Error:', message);
-    }
-
-    /**
-     * Hide the loading screen
-     */
-    function hideLoadingScreen() {
-        if (elements.loadingScreen) {
-            elements.loadingScreen.style.display = 'none';
+        if (newGameButton) {
+            newGameButton.addEventListener('click', () => {
+                location.reload();
+            });
         }
     }
 
-    /**
-     * Debounce function to limit rapid function calls
-     * @param {Function} func - Function to debounce
-     * @param {number} wait - Wait time in milliseconds
-     * @returns {Function} Debounced function
-     */
-    function debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    }
+    // Expose some functions globally for debugging
+    window.BentoGame = {
+        gameBoard: () => gameBoard,
+        selectedPiece: () => selectedPiece,
+        currentPlayer: () => currentPlayer
+    };
 
-    // Initialize the game
-    init();
-
-    // Export for testing purposes
-    if (typeof window !== 'undefined') {
-        window.BentoBlocksGame = {
-            startNewGame,
-            getGameBoard: () => gameBoard,
-            selectPiece,
-            // Add other functions that need to be exposed for testing
-        };
-    }
+    console.log("Main.js loaded successfully");
 
 })();
